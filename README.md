@@ -1,6 +1,5 @@
-# SWDV-691_Final-Project
+# SWDV-691_Final-Project - Karl Tomecek
 SWDV-691_Final-Project_Source
-Karl Tomecek
 
 ## Title:
 uforme.com
