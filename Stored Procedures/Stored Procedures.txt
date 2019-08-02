@@ -1,0 +1,242 @@
+Stored Procedures - Karl Tomecek SWDV 691
+
+USE [uforme]
+GO
+/****** Object:  StoredProcedure [dbo].[CreateUser]    Script Date: 8/2/2019 12:59:48 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Author,,Karl Tomecek>
+-- Create date: <Create Date,,07/31/2019>
+-- Description:	<Description,,Create New User>
+-- Clear Table: USE uforme; DELETE FROM [dbo].[users]; 
+-- Usage: USE uforme;EXEC dbo.CreateUser @Password='007isbond',@firstName='Karl',@lastName='Tomecek',@userName='ktomecek',@email='ktomecek@bellsouth.net',@accessLevel=0
+-- =============================================
+ALTER PROCEDURE [dbo].[CreateUser] 
+	-- Add the parameters for the stored procedure here
+	@Password nvarchar(12),
+	@firstName nvarchar(50),
+	@lastName nvarchar(150),
+	@userName nvarchar(150),
+	@email nvarchar(50),
+	@accessLevel tinyint
+
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+	INSERT INTO [dbo].[users]
+           ([password]
+           ,[firstName]
+           ,[lastName]
+           ,[userName]
+           ,[email]
+           ,[dateJoined]
+		   ,[userActive]
+		   ,[languagePreference]
+		   ,[accessLevel])
+
+     VALUES
+           (@Password,
+            @firstName,
+            @lastName,
+            @userName,
+            @email,
+            CONVERT (date, GETUTCDATE()),
+			1,--set user to active
+			1,--set language to English
+			@accessLevel)
+END
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------
+USE [uforme]
+GO
+/****** Object:  StoredProcedure [dbo].[GetUser]    Script Date: 8/2/2019 1:01:37 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Author,,Karl Tomecek>
+-- Create date: <Create Date,,07/31/2019>
+-- Description:	<Description,,Get A Particular User>
+-- Display Table: USE uforme; SELECT * FROM [dbo].[users]; 
+-- Usage: USE uforme;EXEC dbo.GetUser @userName='ktomecek'
+-- =============================================
+ALTER PROCEDURE [dbo].[GetUser] 
+	-- Add the parameters for the stored procedure here
+	@userName nvarchar(150)
+
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+	SELECT * FROM [dbo].[users] WHERE userName = @userName FOR JSON AUTO
+	
+END
+
+------------------------------------------------------------------------------------------------------------------------------------
+USE [uforme]
+GO
+/****** Object:  StoredProcedure [dbo].[LogIn]    Script Date: 8/2/2019 1:01:51 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Author,,Karl Tomecek>
+-- Create date: <Create Date,,07/31/2019>
+-- Description:	<Description,,User Login>
+-- Display Table: USE uforme; SELECT * FROM [dbo].[users]; 
+-- Usage: USE uforme;EXEC dbo.LogIn @userName='username', @password='password'
+-- =============================================
+ALTER PROCEDURE [dbo].[LogIn] 
+	-- Add the parameters for the stored procedure here
+	@userName nvarchar(150),
+	@password nvarchar(12)
+
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+    --SET @userName  = 'ktomecek'
+	--SET @password  = '007isbond'
+
+
+	CREATE TABLE #results ([values] varchar(20) NOT null)
+	
+	IF (
+	SELECT COUNT(*) FROM [dbo].[users]
+	WHERE (userName = @userName AND password = @password AND userActive = 1)
+	) > 0
+	BEGIN
+		INSERT INTO #results ([values]) values ('success')
+	END
+	ELSE
+		BEGIN
+			INSERT INTO #results ([values]) values ('fail')
+		END
+			
+	SELECT * FROM #results FOR JSON AUTO
+	DROP TABLE #results
+
+END
+
+------------------------------------------------------------------------------------------------------------------------------------
+USE [uforme]
+GO
+/****** Object:  StoredProcedure [dbo].[ResetPassword]    Script Date: 8/2/2019 1:02:04 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Author,,Karl Tomecek>
+-- Create date: <Create Date,,07/31/2019>
+-- Description:	<Description,,Reset user password>
+-- Display Table: USE uforme; SELECT * FROM [dbo].[users]; 
+-- Usage: USE uforme;EXEC dbo.ResetPassword @userName='username', @password='password'
+-- =============================================
+ALTER PROCEDURE [dbo].[ResetPassword] 
+	-- Add the parameters for the stored procedure here
+	@userName nvarchar(150),
+	@password nvarchar(12)
+
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+	CREATE TABLE #results ([values] varchar(20) NOT null)
+	
+	UPDATE [dbo].[users]
+	SET password = @password
+	WHERE userName = @userName
+	IF @@ROWCOUNT >0
+		BEGIN
+			INSERT INTO #results ([values]) values ('success')
+		END
+	ELSE
+		BEGIN
+			INSERT INTO #results ([values]) values ('fail')
+		END
+	SELECT * FROM #results FOR JSON AUTO
+	DROP TABLE #results
+END
+
+------------------------------------------------------------------------------------------------------------------------------------
+USE [uforme]
+GO
+/****** Object:  StoredProcedure [dbo].[UpdateProfile]    Script Date: 8/2/2019 1:02:24 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Author,,Karl Tomecek>
+-- Create date: <Create Date,,07/31/2019>
+-- Description:	<Description,,Reset user password>
+-- Display Table: USE uforme; SELECT * FROM [dbo].[users]; 
+-- NOTE:  These parameters are optional except userName
+-- Usage: USE uforme;EXEC dbo.UpdateProfile @userName='ktomecek',@email='kdtomecek@bellsouth.net',@ccNumber='12312341231234',@cid='123',@gender='1',@height='73',@bodyType='1',@birthDate='11/29/2001',@city='FL',@state='FL',@zip='99999',@languagePreference='1'
+-- =============================================
+ALTER PROCEDURE [dbo].[UpdateProfile] 
+	-- Add the parameters for the stored procedure here
+	@userName nvarchar(150),
+	@email nvarchar(50) = NULL,
+	@phone char(10) = NULL,
+	@ccNumber char(15) = NULL,
+	@cid nchar(4) = NULL,
+	@gender tinyint = NULL,
+	@height tinyint = NULL,
+	@bodyType tinyint = NULL,
+	@birthDate date = NULL,
+	@city varchar(50) = NULL,
+	@state char(2) = NULL,
+	@zip nchar(10) = NULL,
+	@languagePreference int = NULL
+
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+	CREATE TABLE #results ([values] varchar(20) NOT null)
+	
+	UPDATE [dbo].[users]
+	SET
+		email=ISNULL(@email,email),
+		phone=ISNULL(@phone,phone),
+		ccNumber=ISNULL(@ccNumber,ccNumber),
+		cid=ISNULL(@cid,cid),
+		gender=ISNULL(@gender,gender),
+		height=ISNULL(@height,height),
+		bodyType=ISNULL(@bodyType,bodyType),
+		birthDate=ISNULL(@birthDate,birthDate),
+		city=ISNULL(@city,city),
+		[state]=ISNULL(@state,[state]),
+		zip=ISNULL(@zip,zip),
+		languagePreference=ISNULL(@languagePreference,languagePreference)
+	WHERE userName = @userName
+	IF @@ROWCOUNT >0
+		BEGIN
+			INSERT INTO #results ([values]) values ('success')
+		END
+	ELSE
+		BEGIN
+			INSERT INTO #results ([values]) values ('fail')
+		END
+	SELECT * FROM #results FOR JSON AUTO
+	DROP TABLE #results
+END
